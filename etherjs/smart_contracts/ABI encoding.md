@@ -68,3 +68,62 @@ console.log('Decoded values:', decodedValues);
 ```
 
 In this example, `types` and `values` represent the types and values to be encoded, respectively. The `encode` method encodes these values into ABI data, and the `decode` method decodes ABI data back into values.
+Below is a TypeScript code snippet that includes the creation of instances of different ABI encoding fragments, including the `from` method for the `FunctionFragment`:
+
+```typescript
+import { ethers } from 'ethers';
+
+// Create instances of different ABI encoding fragments
+
+// FunctionFragment
+const functionFragment = ethers.utils.FunctionFragment.from({
+    type: 'function',
+    name: 'transfer',
+    inputs: [{ name: 'recipient', type: 'address' }, { name: 'amount', type: 'uint256' }],
+    outputs: [],
+    constant: false,
+    payable: false,
+    stateMutability: 'nonpayable',
+});
+
+// EventFragment
+const eventFragment = ethers.utils.EventFragment.from({
+    type: 'event',
+    name: 'Transfer',
+    anonymous: false,
+    inputs: [{ name: 'from', type: 'address', indexed: true }, { name: 'to', type: 'address', indexed: true }, { name: 'amount', type: 'uint256', indexed: false }],
+});
+
+// ConstructorFragment
+const constructorFragment = ethers.utils.ConstructorFragment.from({
+    type: 'constructor',
+    inputs: [{ name: 'initialSupply', type: 'uint256' }],
+    payable: false,
+});
+
+// ErrorFragment
+const errorFragment = ethers.utils.ErrorFragment.from({
+    type: 'error',
+    name: 'InsufficientBalance',
+    inputs: [],
+    selector: '0x12345678',
+});
+
+// FallbackFragment
+const fallbackFragment = new ethers.utils.FallbackFragment(null, [], false);
+
+// Print formatted representations of the fragments
+console.log('Function Fragment:', functionFragment.format());
+console.log('Event Fragment:', eventFragment.format());
+console.log('Constructor Fragment:', constructorFragment.format());
+console.log('Error Fragment:', errorFragment.format());
+console.log('Fallback Fragment:', fallbackFragment.format());
+```
+
+In this code:
+
+- Instances of different ABI encoding fragments (FunctionFragment, EventFragment, ConstructorFragment, ErrorFragment, and FallbackFragment) are created using their respective `from` method (for FunctionFragment) or constructors.
+- Each fragment is created with sample data representing its properties.
+- The `format` method is called on each fragment instance to obtain a formatted representation of the fragment.
+
+Please note that this code assumes the usage of ethers.js library for ABI encoding fragments. Make sure to install ethers.js (`npm install ethers`) if you haven't already.
