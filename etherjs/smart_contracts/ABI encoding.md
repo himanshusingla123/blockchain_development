@@ -127,3 +127,111 @@ In this code:
 - The `format` method is called on each fragment instance to obtain a formatted representation of the fragment.
 
 Please note that this code assumes the usage of ethers.js library for ABI encoding fragments. Make sure to install ethers.js (`npm install ethers`) if you haven't already.
+
+Example:
+```js
+abi = [
+  "function decimals() view returns (string)",
+  "function symbol() view returns (string)",
+  "function balanceOf(address addr) view returns (uint)"
+]
+
+// Create a contract
+contract = new Contract("dai.tokens.ethers.eth", abi, provider)
+```
+## Read-only methods (i.e. view and pure)
+A read-only method is one which cannot change the state of the blockchain, but often provide a simple interface to get important data about a Contract.
+```
+// The contract ABI (fragments we care about)
+abi = [
+  "function decimals() view returns (uint8)",
+  "function symbol() view returns (string)",
+  "function balanceOf(address a) view returns (uint)"
+]
+
+// Create a contract; connected to a Provider, so it may
+// only access read-only methods (like view and pure)
+contract = new Contract("dai.tokens.ethers.eth", abi, provider)
+
+// The symbol name for the token
+sym = await contract.symbol()
+// 'DAI'
+
+// The number of decimals the token uses
+decimals = await contract.decimals()
+// 18n
+
+// Read the token balance for an account
+balance = await contract.balanceOf("ethers.eth")
+// 4000000000000000000000n
+
+// Format the balance for humans, such as in a UI
+formatUnits(balance, decimals)
+// '4000.0'
+```
+## State-changing Methods
+Example 1
+```js
+abi = [
+  "function transfer(address to, uint amount)"
+]
+
+// Connected to a Signer; can make state changing transactions,
+// which will cost the account ether
+contract = new Contract("dai.tokens.ethers.eth", abi, signer)
+
+// Send 1 DAI
+amount = parseUnits("1.0", 18);
+
+// Send the transaction
+tx = await contract.transfer("ethers.eth", amount)
+
+// Currently the transaction has been sent to the mempool,
+// but has not yet been included. So, we...
+
+// ...wait for the transaction to be included.
+await tx.wait()
+```
+Example 2
+```
+abi = [
+  "function transfer(address to, uint amount) returns (bool)"
+]
+
+// Connected to a Provider since we only require read access
+contract = new Contract("dai.tokens.ethers.eth", abi, provider)
+
+amount = parseUnits("1.0", 18)
+
+// There are many limitations to using a static call, but can
+// often be useful to preflight a transaction.
+await contract.transfer.staticCall("ethers.eth", amount)
+// true
+
+// We can also simulate the transaction as another account
+other = new VoidSigner("0x643aA0A61eADCC9Cc202D1915D942d35D005400C")
+contractAsOther = contract.connect(other.connect(provider))
+await contractAsOther.transfer.staticCall("ethers.eth", amount)
+// true
+```
+explanation:
+Let's break down the provided code and explain each part:
+
+1. **ABI (Application Binary Interface):**
+   - This defines the interface of the smart contract, specifying the functions and their signatures that can be called from outside the contract. In this case, there's only one function defined: `transfer(address to, uint amount) returns (bool)`.
+
+2. **Contract Initialization:**
+   - A new contractinstance is created using the provided ABI (`abi`) and the address of the smart contract (`dai.tokens.ethers.eth`). This contract instance is connected to a provider, which in this case, only provides read access to the blockchain.
+
+3. **Amount Calculation:**
+   - The `parseUnits` function is used to convert the value `"1.0"` (representing 1 DAI) into its equivalent amount in the smallest units (wei) based on 18 decimal places (`18`).
+
+4. **Static Call:**
+   - `contract.transfer.staticCall("ethers.eth", amount)` is used to perform a static call to the `transfer` function of the smart contract. A static call does not modify the blockchain state but only retrieves information or performs read operations. In this case, it's used to check if the transfer of the specified `amount` to the address `"ethers.eth"` would succeed without actually executing the transaction.
+
+5. **Simulating Transaction as Another Account:**
+   - A new VoidSigner instance (`other`) is created with the address `"0x643aA0A61eADCC9Cc202D1915D942d35D005400C"`. This signer is then connected to the same provider.
+   - `contractAsOther` is a new contract instance connected to the `other` signer and the original provider.
+   - `await contractAsOther.transfer.staticCall("ethers.eth", amount)` is used to simulate the execution of the `transfer` function from the perspective of the `other` account, without actually modifying the blockchain state. It returns `true`, indicating that the transfer would succeed if executed.
+Therefore, the execution of await contractAsOther.transfer.staticCall("ethers.eth", amount) does not result in any modification of the blockchain state. It only returns true, indicating that the simulated execution of the transfer function would succeed if it were executed as a regular transaction, but without actually affecting the blockchain state.
+Overall, this code snippet demonstrates how to use static calls to preflight transactions and simulate their execution from different account perspectives without actually modifying the blockchain state. It's a useful technique for verifying transaction outcomes before committing them to the blockchain.
